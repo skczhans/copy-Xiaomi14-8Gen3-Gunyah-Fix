@@ -4744,6 +4744,43 @@ jobs:
               print("Official SUSFS 源码兼容修复无需修改。")
           PY
 
+      - name: 补齐 Official SUSFS post_execveat 钩子
+        if: inputs.ksu_variant == 'Official' && inputs.enable_susfs
+        working-directory: ${{ env.KERNEL_ROOT }}
+        run: |
+          set -euo pipefail
+          SUCOMPAT_C="common/drivers/kernelsu/feature/sucompat.c"
+          if [ ! -f "$SUCOMPAT_C" ]; then
+            echo "::error::未找到 $SUCOMPAT_C"
+            exit 1
+          fi
+          if grep -qF 'ksu_handle_post_execveat_sucompat' "$SUCOMPAT_C"; then
+            echo "ksu_handle_post_execveat_sucompat 已存在，跳过"
+            exit 0
+          fi
+          {
+            echo ""
+            echo "/* ABK: SUSFS fs/exec.c expects this post-execveat hook. */"
+            echo "int ksu_handle_post_execveat_sucompat(int *fd, struct filename **filename_ptr,"
+            echo "                                      void *argv, void *envp, int *flags, int *retval)"
+            echo "{"
+            echo "    (void)retval;"
+            echo "    return ksu_handle_execveat_sucompat(fd, filename_ptr, argv, envp, flags);"
+            echo "}"
+          } >> "$SUCOMPAT_C"
+
+          SUCOMPAT_H="common/drivers/kernelsu/feature/sucompat.h"
+          if [ -f "$SUCOMPAT_H" ] && ! grep -qF 'ksu_handle_post_execveat_sucompat' "$SUCOMPAT_H"; then
+            {
+              echo ""
+              echo "int ksu_handle_post_execveat_sucompat(int *fd, struct filename **filename_ptr,"
+              echo "                                      void *argv, void *envp, int *flags, int *retval);"
+            } >> "$SUCOMPAT_H"
+            echo "已补齐声明到 $SUCOMPAT_H"
+          fi
+
+          echo "已补齐 ksu_handle_post_execveat_sucompat 到 $SUCOMPAT_C"
+
       - name: 修复 Official SUSFS 6.1-6.12 SELinux 导出
         if: inputs.ksu_variant == 'Official' && inputs.enable_susfs && (inputs.kernel_version == '6.1' || inputs.kernel_version == '6.6' || inputs.kernel_version == '6.12')
         working-directory: ${{ env.KERNEL_ROOT }}
