@@ -4579,7 +4579,7 @@ jobs:
           text = text.replace('#include "hook/syscall_hook.h"\n', "")
           text = ensure_line_after(text, '#include "feature/adb_root.h"\n', '#include "hook/setuid_hook.h"\n')
           text = ensure_line_after(text, '#include "hook/setuid_hook.h"\n', '#include "feature/sucompat.h"\n')
-          text = text.replace("bool ksu_late_loaded;\n", "")
+          # text = text.replace("bool ksu_late_loaded;\n", "")
           text = re.sub(
               r'\n#if defined\(__x86_64__\)\n#include <asm/cpufeature\.h>\n#include <linux/version\.h>\n#ifndef X86_FEATURE_INDIRECT_SAFE\n#error "FATAL: Your kernel is missing the indirect syscall bypass patches!"\n#endif\n#endif\n',
               "\n",
@@ -4606,7 +4606,7 @@ jobs:
           include_ksu = ksu_dir / "include/ksu.h"
           if include_ksu.exists():
               header = include_ksu.read_text()
-              updated = header.replace("extern bool ksu_late_loaded;\n", "")
+              # updated = header.replace("extern bool ksu_late_loaded;\n", "")
               if updated != header:
                   include_ksu.write_text(updated)
                   changed = True
