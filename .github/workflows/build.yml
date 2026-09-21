@@ -4744,6 +4744,42 @@ jobs:
               print("Official SUSFS 源码兼容修复无需修改。")
           PY
 
+      - name: 修复 ksu_late_loaded 未定义
+        if: inputs.ksu_variant == 'Official' && inputs.enable_susfs
+        working-directory: ${{ env.KERNEL_ROOT }}
+        run: |
+          set -euo pipefail
+          KSU_DIR="common/drivers/kernelsu"
+          if [ ! -d "$KSU_DIR" ]; then
+            echo "未找到 $KSU_DIR，跳过 ksu_late_loaded 修复"
+            exit 0
+          fi
+
+          # 如果已有定义，直接跳过
+          if grep -Rq 'bool ksu_late_loaded' "$KSU_DIR"; then
+            echo "ksu_late_loaded 定义已存在，跳过"
+            exit 0
+          fi
+
+          # 如果没有引用，也跳过
+          if ! grep -Rq 'ksu_late_loaded' "$KSU_DIR"; then
+            echo "未引用 ksu_late_loaded，跳过"
+            exit 0
+          fi
+
+          DISPATCH_C="$KSU_DIR/supercall/dispatch.c"
+          if [ ! -f "$DISPATCH_C" ]; then
+            echo "::error::未找到 $DISPATCH_C"
+            exit 1
+          fi
+
+          # 移除可能存在的 extern 声明，避免重复
+          sed -i '/^[[:space:]]*extern[[:space:]]\+bool[[:space:]]\+ksu_late_loaded[[:space:]]*;/d' "$DISPATCH_C"
+
+          # 在文件末尾添加全局定义
+          echo 'bool ksu_late_loaded __read_mostly = false;' >> "$DISPATCH_C"
+          echo "已在 $DISPATCH_C 末尾添加 ksu_late_loaded 定义"
+
       - name: 补齐 Official SUSFS post_execveat 钩子
         if: inputs.ksu_variant == 'Official' && inputs.enable_susfs
         working-directory: ${{ env.KERNEL_ROOT }}
