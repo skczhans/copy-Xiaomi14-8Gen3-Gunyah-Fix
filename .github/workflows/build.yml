@@ -4607,10 +4607,10 @@ jobs:
           if include_ksu.exists():
               header = include_ksu.read_text()
               # updated = header.replace("extern bool ksu_late_loaded;\n", "")
-              if updated != header:
-                  include_ksu.write_text(updated)
-                  changed = True
-                  print(f"已移除 {include_ksu} 中的 ksu_late_loaded 声明")
+              # if updated != header:
+              #     include_ksu.write_text(updated)
+              #     changed = True
+              #     print(f"已移除 {include_ksu} 中的 ksu_late_loaded 声明")
 
           changed = ensure_official_susfs_objects(ksu_dir) or changed
           changed = patch_official_selinux_hide(ksu_dir) or changed
