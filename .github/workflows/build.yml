@@ -4755,15 +4755,15 @@ jobs:
             exit 0
           fi
 
-          # 如果已有定义，直接跳过
-          if grep -Rq 'bool ksu_late_loaded' "$KSU_DIR"; then
-            echo "ksu_late_loaded 定义已存在，跳过"
+          # 如果没有引用，跳过
+          if ! grep -Rq 'ksu_late_loaded' "$KSU_DIR"; then
+            echo "未引用 ksu_late_loaded，跳过"
             exit 0
           fi
 
-          # 如果没有引用，也跳过
-          if ! grep -Rq 'ksu_late_loaded' "$KSU_DIR"; then
-            echo "未引用 ksu_late_loaded，跳过"
+          # 只认“带初始化的实际定义”，extern 声明不算
+          if grep -RE '^[[:space:]]*(static[[:space:]]+)?bool[[:space:]]+ksu_late_loaded[[:space:]]*=' "$KSU_DIR" >/dev/null 2>&1; then
+            echo "ksu_late_loaded 实际定义已存在，跳过"
             exit 0
           fi
 
